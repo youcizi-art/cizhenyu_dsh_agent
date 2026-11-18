@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "product": "CIZHENYU AGENT",
+  "repo": "https://github.com/youcizi-art/cizhenyu_dsh_agent.git",
+  "strategy": "B",
+  "kernel": {
+    "npmPackage": "@deepseek-ai/dsh",
+    "npmVersion": "0.2.2-rc.1",
+    "note": "Official MIT kernel; productization via plugins only"
+  },
+  "plugins": [
+    {
+      "id": "ui-brand-cizhenyu",
+      "npmName": "@cizhenyu/dsh-client-ui-brand",
+      "install": "git+https://github.com/youcizi-art/cizhenyu_dsh_agent.git#master",
+      "cordisPatch": "deploy/cordis.brand.patch.yml",
+      "role": "web-client-brand"
+    }
+  ]
+}
