@@ -14,6 +14,13 @@ client = """window.__ModuleLoader__.load({
 		var jsx_runtime = require("react/jsx-runtime");
 		var PRODUCT = %s;
 		var LOGO = %s;
+		function setDocumentTitle() {
+			try {
+				if (typeof document !== "undefined" && document.title !== PRODUCT) {
+					document.title = PRODUCT;
+				}
+			} catch (e) {}
+		}
 		function CizhenyuBrandMark({ size }) {
 			var s = typeof size === "number" && size > 0 ? size : 24;
 			return jsx_runtime.jsx("span", {
@@ -42,10 +49,14 @@ client = """window.__ModuleLoader__.load({
 		}
 		var inject = ["slots"];
 		function apply(ctx) {
+			setDocumentTitle();
 			ctx.slots.inject("sidebar.brand.mark", () => ctx.slots.inject("sidebar.brand.name", function* () {
 				yield ctx.slots.register({ name: "sidebar.brand.mark", id: "cizhenyu" }, CizhenyuBrandMark);
 				yield ctx.slots.register({ name: "sidebar.brand.name", id: "cizhenyu" }, CizhenyuBrandName);
 			}));
+			ctx.slots.inject("conversation.hero.brand.mark", function* () {
+				yield ctx.slots.register({ name: "conversation.hero.brand.mark", id: "cizhenyu" }, CizhenyuBrandMark);
+			});
 		}
 		exports.apply = apply;
 		exports.inject = inject;
@@ -55,7 +66,7 @@ client = """window.__ModuleLoader__.load({
 """ % (product_js, logo_js)
 (root / "lib" / "client.js").write_text(client, encoding="utf-8")
 (root / "lib" / "index.js").write_text(
-    "/** Host half — presentation is browser-only via ./client. */\\nexport function apply() {}\\n".replace("\\\\n", "\n"),
+    "export function apply() {}\n",
     encoding="utf-8",
 )
-print("regenerated", len(client))
+print("ok", len(client))

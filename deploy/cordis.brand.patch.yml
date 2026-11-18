@@ -1,20 +1,17 @@
-# Cizhenyu brand plugin fragment for DSH web profile.
-# Deploy merges this into DSH_HOME/profiles/web/cordis.patch.yml.
-# Safe: do NOT disable deepseek-account (breaks account-controller boot).
+- insert:
+    - id: ui-brand-cizhenyu
+      name: '@cizhenyu/dsh-client-ui-brand'
 
-# Skip first-run welcome / preview notice.
+- id: ui-brand-official
+  disabled: true
+
 - id: ui-settings-general
   config:
     welcomeNoticeVersion: 2026-09-28.1
 
-# Disable first-run "Add API key / Sign in" automatic dialog.
 - id: ui-settings-models
   config:
     credentialOnboarding: false
 
-# Official DeepSeek brand occupants off; Cizhenyu plugin fills sidebar slots.
-- id: ui-brand-official
+- id: ui-settings-account
   disabled: true
-
-- id: ui-brand-cizhenyu
-  name: '@cizhenyu/dsh-client-ui-brand'
