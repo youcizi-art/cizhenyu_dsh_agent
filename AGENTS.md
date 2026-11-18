@@ -1,25 +1,15 @@
-# AGENTS.md — Cizhenyu DSH 插件仓
-
-本仓只做 **DSH 插件包**，不维护官方 Harness 全量源码。
+# AGENTS.md — CIZHENYU AGENT 安装仓
 
 ## 原则
 
-1. 官方内核：`@deepseek-ai/dsh`（Deploy 钉版本安装）。
-2. 我们的改动：本仓插件（品牌、后续 CMS 对接等），通过 cordis 槽位 / patch 接入。
-3. 禁止在 Deploy WebView 里 DOM 刮擦品牌当主路径。
+1. 本仓是 Deploy 安装源（与工具箱一致）：GitHub → `{workRoot}/agents/dsh_agent`。
+2. 官方内核：`@deepseek-ai/dsh`（本仓 `package.json` 钉版本）。
+3. 品牌等产品化：`packages/*` 插件 + `deploy/*.patch.yml`，禁止在 Deploy WebView 里 DOM 刮擦。
 4. 禁止 `disabled: deepseek-account` 等会卡死 boot 的 patch。
-5. 简单优先：一个插件一个包；先能用再抽象。
+5. 用户数据只在安装副本 `home/`；禁止读写本机 `~/.dsh`。
 
-## 改品牌流程
+## 改动流程
 
-1. 改 `assets/cizhenyu-logo.svg` 或 `lib/` 生成脚本
-2. `python _gen_client.py`
-3. 本地挂到已装 dsh 的 `node_modules` 验证
-4. 提交并 `git push origin master`
-5. 用户侧 Deploy「安装/更新 Agent」拉取
-
-## 文件
-
-- `lib/client.js` — browser 半包（ModuleLoader）
-- `lib/index.js` — host 空 apply
-- `deploy/cordis.patch.yml` — Deploy 合并进 `DSH_HOME`
+1. 在本仓改插件 / patch
+2. 提交并 `git push origin master`
+3. 用户侧 Deploy「安装/更新 Agent」重新拉取本仓并 `npm install`

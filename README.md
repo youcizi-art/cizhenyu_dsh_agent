@@ -1,42 +1,33 @@
-# @cizhenyu/dsh-client-ui-brand
+# CIZHENYU AGENT（DSH 安装仓）
 
-CIZHENYU AGENT 的 **DSH 客户端品牌插件**（方案 B）。
+Deploy 与工具箱同一套路：本仓是**源码**，推到 GitHub 后由软件 ZIP/Git 拉取并安装到 `{workRoot}/agents/dsh_agent`。
 
-- 运行时内核仍是官方 [`@deepseek-ai/dsh`](https://www.npmjs.com/package/@deepseek-ai/dsh)
-- 本仓只发布可安装的 cordis **client 插件**，注册 `sidebar.brand.mark` / `sidebar.brand.name`
-- Deploy 安装官方 dsh 后，再安装本包，并把 `deploy/cordis.brand.patch.yml` 合并进独立 `DSH_HOME`
+| 角色 | 路径 |
+|------|------|
+| 源码 | `F:\cizhenyu\agents\dsh_agent` → GitHub `youcizi-art/cizhenyu_dsh_agent` |
+| 安装副本 | `{workRoot}/agents/dsh_agent`（如 `D:\cizhenyu\agents\dsh_agent`） |
+| 数据面 | 安装副本下 `home/`（`DSH_HOME`，与 `~/.dsh` 隔离） |
 
-仓库：[youcizi-art/cizhenyu_dsh_agent](https://github.com/youcizi-art/cizhenyu_dsh_agent.git)
+## 结构
 
-## 本地开发
-
-```bash
-# 改 assets/cizhenyu-logo.svg 后重新生成 browser 半包
-python _gen_client.py
-
-# 在已安装 dsh 的目录里用 file: 依赖联调
-cd D:\cizhenyu\agents\dsh_agent
-npm install git+https://github.com/youcizi-art/cizhenyu_dsh_agent.git#master
-# 或：npm install F:\cizhenyu\agents\dsh_agent
+```
+package.json                          # 安装根：钉 @deepseek-ai/dsh + 本地品牌包
+packages/dsh-client-ui-brand/         # @cizhenyu/dsh-client-ui-brand（sidebar slots）
+deploy/cordis.brand.patch.yml         # 合并进 DSH_HOME/profiles/web/cordis.patch.yml
+deploy/manifest.json
 ```
 
-把 `deploy/cordis.brand.patch.yml` 合并到 `home/profiles/web/cordis.patch.yml` 后执行：
+## 本地改品牌
 
 ```bash
+cd packages/dsh-client-ui-brand
+# 改 assets/cizhenyu-logo.svg 后
+python _gen_client.py
+cd ../..
+npm install
 npx dsh web --no-open --port 13880
 ```
 
-## Deploy 安装约定
-
-| 项 | 值 |
-|----|----|
-| npm 包名 | `@cizhenyu/dsh-client-ui-brand` |
-| 安装源 | `git+https://github.com/youcizi-art/cizhenyu_dsh_agent.git#master` |
-| cordis id | `ui-brand-cizhenyu` |
-| 关闭官方品牌 | `ui-brand-official: disabled: true` |
-
-后续 CMS / 其它扩展：在本仓增加 `packages/<name>/` 同类插件，Deploy 按 manifest 安装即可（v0.1 先单包根目录）。
-
 ## 许可证
 
-MIT。基于 DeepSeek Harness（MIT）槽位扩展；勿冒充官方 DeepSeek Harness。
+MIT。基于 DeepSeek Harness（MIT）扩展；勿冒充官方 DeepSeek Harness。

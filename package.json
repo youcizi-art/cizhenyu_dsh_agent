@@ -1,46 +1,22 @@
 {
-  "name": "@cizhenyu/dsh-client-ui-brand",
+  "name": "cizhenyu-dsh-agent",
+  "private": true,
   "version": "0.1.0",
-  "description": "CIZHENYU AGENT brand occupants for DeepSeek Harness Web sidebar slots",
-  "type": "module",
+  "description": "CIZHENYU AGENT install root: official @deepseek-ai/dsh + Cizhenyu brand plugin",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/youcizi-art/cizhenyu_dsh_agent.git"
   },
-  "main": "lib/index.js",
-  "exports": {
-    ".": "./lib/index.js",
-    "./client": "./lib/client.js",
-    "./package.json": "./package.json",
-    "./assets/*": "./assets/*",
-    "./deploy/cordis.brand.patch.yml": "./deploy/cordis.brand.patch.yml"
-  },
-  "files": [
-    "lib/index.js",
-    "lib/client.js",
-    "assets/**/*",
-    "deploy/cordis.brand.patch.yml",
-    "deploy/manifest.json",
-    "README.md",
-    "AGENTS.md"
-  ],
-  "dsh": {
-    "client": {
-      "inject": [
-        "@deepseek-ai/dsh-client-ui-renderer",
-        "@deepseek-ai/dsh-client-ui-sidebar"
-      ],
-      "platform": "web"
-    }
-  },
-  "peerDependencies": {
-    "@deepseek-ai/cordis": "~4.1.0"
+  "dependencies": {
+    "@deepseek-ai/dsh": "0.2.2-rc.1",
+    "@cizhenyu/dsh-client-ui-brand": "file:./packages/dsh-client-ui-brand"
   },
   "cizhenyu": {
-    "kind": "dsh-client-plugin",
+    "kind": "dsh-agent-install",
     "productName": "CIZHENYU AGENT",
-    "peerDsh": "0.2.2-rc.1",
-    "cordisPluginId": "ui-brand-cizhenyu"
+    "dshHomeRelative": "home",
+    "cordisBrandPatch": "deploy/cordis.brand.patch.yml",
+    "defaultPort": 13880
   }
 }
