@@ -8,27 +8,18 @@ import { deleteSessionHard } from "./features/session-delete.js";
 /** Must match @deepseek-ai/dsh-typert-protocol internal descriptor key (SRC discovery). */
 const REMOTE_METHOD_DESCRIPTOR = "@deepseek-ai/dsh-typert-protocol/remote-methods";
 
-/**
- * Declared Remote exports for Gateway SRC discovery.
- * Add a method here when exposing a new host RPC under namespace `cizhenyuExt`.
- */
 const REMOTE_METHODS = Object.freeze([
   Object.freeze({
     method: "deleteSession",
     invocation: Object.freeze({ kind: "direct" }),
   }),
-  // Future: Object.freeze({ method: '…', invocation: Object.freeze({ kind: 'direct' }) }),
 ]);
 
-/**
- * Feature registry (host). Client features are registered in lib/client.js.
- * Keep ids stable; enable/disable can be wired to Config later.
- */
 export const FEATURES = Object.freeze({
   "session-delete": {
     id: "session-delete",
     enabled: true,
-    description: "Hard-delete sessions via Deploy bridge (stop → purge → restart)",
+    description: "Hard-delete sessions via Deploy bridge (confirm/loading on Deploy)",
   },
 });
 
@@ -40,19 +31,21 @@ export class CizhenyuExtService extends TypertRemoteService {
   }
 
   /**
-   * Permanently delete a Session: stop work, detach, remove durable files.
+   * Permanently delete a Session via Deploy.
    * Parameter names are required for Gateway SRC wire mapping.
    * @param {string} sessionId
-   * @param {string} [workspaceId]
-   * @param {boolean} [openNewSession]
+   * @param {string} workspaceId
+   * @param {boolean} openNewSession
+   * @param {string} displayTitle
    */
-  async deleteSession(sessionId, workspaceId, openNewSession) {
+  async deleteSession(sessionId, workspaceId, openNewSession, displayTitle) {
     if (!FEATURES["session-delete"]?.enabled) {
       return { ok: false, code: "disabled", message: "session-delete feature is disabled" };
     }
     return deleteSessionHard(this.ctx, sessionId, {
       workspaceId: workspaceId ? String(workspaceId) : undefined,
-      openNewSession: Boolean(openNewSession),
+      openNewSession: openNewSession === true || openNewSession === "true",
+      displayTitle: displayTitle ? String(displayTitle) : undefined,
     });
   }
 }

@@ -1,21 +1,11 @@
 /**
  * Host: permanently delete one Session via Deploy agent bridge.
- *
- * Why not in-process archive/detach/rm?
- * - detachSession 只会把会话挪到「未分组」
- * - archive 只是注册表隐藏
- * - Agent 进程持有会话文件锁时 rm 会失败，看起来像「删不掉」
- *
- * Deploy 权威链路：停 web → 清 DSH_HOME 会话目录/投影缓存/workspace 注册表 → 再拉起。
- * 若删的是当前会话，可带 workspaceId + openNewSession，重启后在同项目下新建会话。
+ * Confirm / Loading / hard remount live on Deploy — not in Agent WebView.
  */
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { resolveDshHome } from "@deepseek-ai/dsh-home-paths";
 
-/**
- * @returns {Promise<{ baseUrl: string, token: string }>}
- */
 async function readDeployBridgeConfig() {
   const path = join(resolveDshHome(), ".cizhenyu", "deploy-bridge.json");
   const raw = await readFile(path, "utf8");
@@ -28,20 +18,40 @@ async function readDeployBridgeConfig() {
   return { baseUrl, token };
 }
 
+function resolveWorkspaceIdFromRegistry(ctx, sessionId) {
+  try {
+    const registry = ctx.workspaceRegistry ?? ctx.get?.("workspaceRegistry");
+    if (!registry || typeof registry.list !== "function") return "";
+    const list = registry.list();
+    for (const ws of list || []) {
+      const ids = ws?.sessionIds || [];
+      if (Array.from(ids).includes(sessionId)) {
+        return String(ws.id || "");
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return "";
+}
+
 /**
- * @param {unknown} _ctx
+ * @param {import('@deepseek-ai/cordis').Context} ctx
  * @param {string} sessionId
- * @param {{ workspaceId?: string, openNewSession?: boolean }} [options]
- * @returns {Promise<{ ok: true, restarted?: boolean, message?: string, removedPaths?: string[] } | { ok: false, code: string, message: string }>}
+ * @param {{ workspaceId?: string, openNewSession?: boolean, displayTitle?: string }} [options]
  */
-export async function deleteSessionHard(_ctx, sessionId, options = {}) {
+export async function deleteSessionHard(ctx, sessionId, options = {}) {
   const id = String(sessionId || "").trim();
   if (!id) {
     return { ok: false, code: "invalid-id", message: "sessionId is required" };
   }
 
-  const workspaceId = String(options.workspaceId || "").trim();
+  let workspaceId = String(options.workspaceId || "").trim();
+  if (!workspaceId) {
+    workspaceId = resolveWorkspaceIdFromRegistry(ctx, id);
+  }
   const openNewSession = Boolean(options.openNewSession);
+  const displayTitle = String(options.displayTitle || "").trim();
 
   let bridge;
   try {
@@ -55,9 +65,12 @@ export async function deleteSessionHard(_ctx, sessionId, options = {}) {
     };
   }
 
-  const payload = { sessionId: id };
+  const payload = {
+    sessionId: id,
+    openNewSession,
+    displayTitle,
+  };
   if (workspaceId) payload.workspaceId = workspaceId;
-  if (openNewSession) payload.openNewSession = true;
 
   let response;
   try {
@@ -71,6 +84,13 @@ export async function deleteSessionHard(_ctx, sessionId, options = {}) {
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
+    if (/fetch|network|ECONNRESET|aborted/i.test(msg)) {
+      return {
+        ok: true,
+        restarted: true,
+        message: "删除已提交，Agent 正在重启",
+      };
+    }
     return {
       ok: false,
       code: "bridge-unreachable",
@@ -83,6 +103,10 @@ export async function deleteSessionHard(_ctx, sessionId, options = {}) {
     body = await response.json();
   } catch {
     body = null;
+  }
+
+  if (body && body.cancelled) {
+    return { ok: true, cancelled: true, message: "cancelled" };
   }
 
   if (!response.ok || !body || body.ok === false) {

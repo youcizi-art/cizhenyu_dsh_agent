@@ -50,9 +50,17 @@ window.__ModuleLoader__.load({
 			};
 		}
 
-		/**
-		 * Call host SRC Remote without a generated typert.remote-client stub.
-		 */
+		function isExpectedDisconnect(message) {
+			var msg = String(message || "");
+			return /Failed to fetch|NetworkError|network error|Load failed|ECONNRESET|ECONNREFUSED|aborted|The network connection was lost|websocket|WebSocket/i.test(msg);
+		}
+
+		function sleep(ms) {
+			return new Promise(function (resolve) {
+				setTimeout(resolve, ms);
+			});
+		}
+
 		async function callExt(ctx, method, args) {
 			var connection = ctx.get("connection");
 			if (!connection || !connection.rpc || typeof connection.rpc.call !== "function") {
@@ -68,6 +76,14 @@ window.__ModuleLoader__.load({
 			return result.value;
 		}
 
+		function getUiWorkspace(ctx) {
+			try {
+				return ctx.get("uiWorkspace");
+			} catch (e) {
+				return null;
+			}
+		}
+
 		function isSessionRunning(ctx, sessionId) {
 			try {
 				var ui = ctx.get("uiSession");
@@ -75,9 +91,6 @@ window.__ModuleLoader__.load({
 					var statuses = ui.sessionStatus.getSnapshot();
 					var status = statuses && typeof statuses.get === "function" ? statuses.get(sessionId) : undefined;
 					if (status && status.running === true) return true;
-					if (status && status.running === false) {
-						/* fall through to list row as secondary signal */
-					}
 				}
 			} catch (e) {}
 			try {
@@ -89,14 +102,19 @@ window.__ModuleLoader__.load({
 			}
 		}
 
-		function isCurrentMainViewSession(ctx, sessionId) {
+		function isCurrentSession(ctx, sessionId) {
 			try {
 				var list = ctx.sessions.list.getSnapshot();
 				var row = list && list.byId ? list.byId[sessionId] : undefined;
-				return !!row && (row.retainedBy && row.retainedBy.mainView ? row.retainedBy.mainView : 0) > 0;
-			} catch (e) {
-				return false;
-			}
+				if (row && (row.retainedBy && row.retainedBy.mainView ? row.retainedBy.mainView : 0) > 0) {
+					return true;
+				}
+			} catch (e) {}
+			try {
+				var el = document.querySelector('[data-row-key="session:' + sessionId + '"]');
+				if (el && el.getAttribute("aria-selected") === "true") return true;
+			} catch (e2) {}
+			return false;
 		}
 
 		function findWorkspaceId(ctx, sessionId) {
@@ -111,6 +129,41 @@ window.__ModuleLoader__.load({
 			return "";
 		}
 
+		/** 删当前：先切到新会话，主视图立刻离开待删 id。 */
+		async function switchAwayIfCurrent(ctx, sessionId, workspaceId) {
+			if (!isCurrentSession(ctx, sessionId)) return false;
+			var ui = getUiWorkspace(ctx);
+			if (!ui || typeof ui.startSession !== "function") {
+				throw new Error("uiWorkspace.startSession unavailable");
+			}
+			ui.startSession(workspaceId || undefined);
+			for (var i = 0; i < 20; i++) {
+				await sleep(50);
+				if (!isCurrentSession(ctx, sessionId)) return true;
+			}
+			return true;
+		}
+
+		/** 乐观 UI：归档后侧栏立刻消失，体感与即时删除一致。 */
+		async function hideSessionInSpa(ctx, sessionId) {
+			var ui = getUiWorkspace(ctx);
+			if (!ui || typeof ui.archiveSession !== "function") return;
+			try {
+				await ui.archiveSession(sessionId);
+			} catch (error) {
+				console.warn("[cizhenyu-ext] optimistic archive failed:", error);
+			}
+		}
+
+		/** Deploy 清盘/重建放到后台，不挡住弹窗关闭。 */
+		function purgeInBackground(ctx, args) {
+			void callExt(ctx, "deleteSession", args).catch(function (error) {
+				var message = error instanceof Error ? error.message : String(error);
+				if (isExpectedDisconnect(message)) return;
+				console.warn("[cizhenyu-ext] background delete:", message);
+			});
+		}
+
 		function DeleteConfirmDialog(props) {
 			var request = props.useDeleteRequest(function (pending) {
 				return pending;
@@ -120,80 +173,98 @@ window.__ModuleLoader__.load({
 			var onConfirm = props.confirmDelete;
 			var texts = copy(locale);
 			var state = react.useState(false);
-			var deleting = state[0];
-			var setDeleting = state[1];
+			var busy = state[0];
+			var setBusy = state[1];
 			var errState = react.useState(null);
 			var error = errState[0];
 			var setError = errState[1];
+			var requestKey = request && request.sessionId ? request.sessionId : "";
+
+			react.useEffect(
+				function () {
+					setError(null);
+					setBusy(false);
+				},
+				[requestKey],
+			);
 
 			if (request === null || request === undefined) return null;
 
 			var close = function () {
-				if (deleting) return;
+				if (busy) return;
 				onSettle();
 			};
 
 			var confirm = function () {
-				setDeleting(true);
+				if (busy) return;
+				setBusy(true);
 				setError(null);
-				Promise.resolve(onConfirm(request))
+				void Promise.resolve(onConfirm(request))
 					.then(function () {
-						setDeleting(false);
+						/* UI 已更新完毕即可关弹窗；Deploy 在后台继续 */
 						onSettle();
 					})
 					.catch(function (reason) {
-						setDeleting(false);
-						setError(reason instanceof Error ? reason.message : String(reason));
+						var message = reason instanceof Error ? reason.message : String(reason);
+						if (isExpectedDisconnect(message)) {
+							onSettle();
+							return;
+						}
+						setBusy(false);
+						setError(message);
 					});
 			};
 
-			return jsx_runtime.jsxs(primitives.Modal, {
-				open: true,
-				onClose: close,
-				closeLabel: texts.close,
-				title: texts.confirmTitle,
-				description: texts.confirmDesc(request.displayTitle),
-				footer: jsx_runtime.jsxs(jsx_runtime.Fragment, {
-					children: [
-						jsx_runtime.jsx(primitives.Button, {
-							variant: "outline",
-							disabled: deleting,
-							onClick: close,
-							children: texts.cancel,
-						}),
-						jsx_runtime.jsx(primitives.Button, {
-							variant: "outline",
-							disabled: deleting,
-							onClick: confirm,
-							style: { color: "var(--dsh-danger, #c62828)" },
-							children: texts.confirmAction,
-						}),
-					],
-				}),
+			var titleNode = jsx_runtime.jsxs("span", {
+				style: { display: "inline-flex", alignItems: "center", gap: 8 },
 				children: [
-					deleting
-						? jsx_runtime.jsx("div", {
-								role: "status",
-								style: { marginTop: 8, fontSize: 13, opacity: 0.8 },
-								children: texts.pending,
-							})
-						: null,
-					error !== null
-						? jsx_runtime.jsx("div", {
-								role: "alert",
-								style: { marginTop: 8, fontSize: 13, color: "var(--dsh-danger, #c62828)" },
-								children: error,
-							})
-						: null,
+					jsx_runtime.jsx(primitives.IconTrashOutlineRegular, {
+						size: 18,
+						"aria-hidden": true,
+						style: { flex: "0 0 auto", color: "var(--dsh-danger, #c62828)" },
+					}),
+					jsx_runtime.jsx("span", { children: texts.confirmTitle }),
 				],
 			});
+
+			return jsx_runtime.jsxs(
+				primitives.Modal,
+				{
+					open: true,
+					onClose: close,
+					closeLabel: texts.close,
+					title: titleNode,
+					description: texts.confirmDesc(request.displayTitle),
+					footer: jsx_runtime.jsxs(jsx_runtime.Fragment, {
+						children: [
+							jsx_runtime.jsx(primitives.Button, {
+								variant: "outline",
+								disabled: busy,
+								onClick: close,
+								children: texts.cancel,
+							}),
+							jsx_runtime.jsx(primitives.Button, {
+								variant: "outline",
+								disabled: busy,
+								onClick: confirm,
+								style: { color: "var(--dsh-danger, #c62828)" },
+								children: busy ? texts.pending : texts.confirmAction,
+							}),
+						],
+					}),
+					children:
+						error !== null
+							? jsx_runtime.jsx("div", {
+									role: "alert",
+									style: { marginTop: 8, fontSize: 13, color: "var(--dsh-danger, #c62828)" },
+									children: error,
+								})
+							: null,
+				},
+				requestKey,
+			);
 		}
 
-		/**
-		 * Feature: session-delete
-		 * Only via session "⋯" context menu (no hover shortcut — avoid misclicks).
-		 * Confirm uses shell.overlay Modal — window.confirm is unreliable in Tauri WebView.
-		 */
 		function registerSessionDelete(ctx) {
 			var deleteRequest = store.createSnapshotStore(null);
 
@@ -232,7 +303,7 @@ window.__ModuleLoader__.load({
 										sessionId: target.sessionId,
 										displayTitle: target.displayTitle || "",
 										workspaceId: findWorkspaceId(ctx, target.sessionId),
-										openNewSession: isCurrentMainViewSession(ctx, target.sessionId),
+										wasCurrent: isCurrentSession(ctx, target.sessionId),
 									});
 								},
 							},
@@ -258,21 +329,23 @@ window.__ModuleLoader__.load({
 									if (isSessionRunning(ctx, request.sessionId)) {
 										throw new Error(copy(ctx.locale).runningAlert);
 									}
-									var args = { sessionId: request.sessionId };
-									if (request.openNewSession && request.workspaceId) {
-										args.workspaceId = request.workspaceId;
-										args.openNewSession = true;
-									} else if (request.openNewSession) {
-										/* current but ungrouped: still flag so Deploy refreshes away from deleted id */
-										args.openNewSession = true;
+									var workspaceId = request.workspaceId || findWorkspaceId(ctx, request.sessionId);
+									var wasCurrent =
+										request.wasCurrent === true || isCurrentSession(ctx, request.sessionId);
+
+									/* 1) 生命周期内先改 SPA：切走 + 归档隐藏 → 体感即时删除 */
+									if (wasCurrent) {
+										await switchAwayIfCurrent(ctx, request.sessionId, workspaceId);
 									}
-									var value = await callExt(ctx, "deleteSession", args);
-									if (value && value.ok === false) {
-										throw new Error(value.message || value.code || "delete failed");
-									}
-									if (value && value.restarted === false && value.message) {
-										window.alert(String(value.message));
-									}
+									await hideSessionInSpa(ctx, request.sessionId);
+
+									/* 2) Deploy 清盘/重建后台进行，不挡住弹窗关闭 */
+									purgeInBackground(ctx, {
+										sessionId: request.sessionId,
+										workspaceId: workspaceId || "",
+										openNewSession: wasCurrent === true,
+										displayTitle: request.displayTitle || "",
+									});
 								},
 							};
 						},
@@ -282,14 +355,11 @@ window.__ModuleLoader__.load({
 			});
 		}
 
-		/**
-		 * Client feature registry — add entries without restructuring apply().
-		 */
 		var CLIENT_FEATURES = [
 			{ id: "session-delete", enabled: true, register: registerSessionDelete },
 		];
 
-		var inject = ["contextMenus", "locale", "connection", "slots", "sessions", "workspaces"];
+		var inject = ["contextMenus", "locale", "connection", "slots", "sessions", "workspaces", "uiWorkspace"];
 
 		function apply(ctx) {
 			for (var i = 0; i < CLIENT_FEATURES.length; i++) {
