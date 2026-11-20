@@ -13,7 +13,7 @@
 
 | id | 说明 |
 |----|------|
-| `session-delete` | 仅「⋯」菜单删除（垃圾桶图标 + 二次确认，无行内按钮） |
+| `session-delete` | ⋯菜单删除 → Deploy bridge 停进程后清盘（真实删除，非归档） |
 
 ## 加新 feature 步骤
 

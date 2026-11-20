@@ -62,6 +62,11 @@ window.__ModuleLoader__.load({
 				var value = await callExt(ctx, "deleteSession", { sessionId: sessionId });
 				if (value && value.ok === false) {
 					window.alert(value.message || value.code || "delete failed");
+					return;
+				}
+				// Deploy 会停进程清盘再拉起；窗口由 Deploy 导航刷新。此处仅在未重启时提示。
+				if (value && value.restarted === false && value.message) {
+					window.alert(String(value.message));
 				}
 			} catch (error) {
 				window.alert(error instanceof Error ? error.message : String(error));

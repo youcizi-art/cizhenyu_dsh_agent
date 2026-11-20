@@ -28,7 +28,7 @@ export const FEATURES = Object.freeze({
   "session-delete": {
     id: "session-delete",
     enabled: true,
-    description: "Hard-delete sidebar sessions (menu action)",
+    description: "Hard-delete sessions via Deploy bridge (stop → purge → restart)",
   },
 });
 
