@@ -16,6 +16,7 @@ client = """window.__ModuleLoader__.load({
 		var PRODUCT = %s;
 		var HERO_TITLE = %s;
 		var LOGO = %s;
+		var CONVERSATION_NS = "conversation";
 		function setDocumentTitle() {
 			try {
 				if (typeof document !== "undefined" && document.title !== PRODUCT) {
@@ -36,10 +37,12 @@ client = """window.__ModuleLoader__.load({
 		}
 		function patchConversationHeroCopy(locale) {
 			if (!locale || typeof locale.translate !== "function") return;
+			if (locale.__cizhenyuHeroPatched) return;
+			locale.__cizhenyuHeroPatched = true;
 			var original = locale.translate.bind(locale);
 			locale.translate = function (ns, key, params) {
-				if (ns === "ui-conversation" && key === "hero.headline") return HERO_TITLE;
-				if (ns === "ui-conversation" && key === "hero.preview") return "";
+				if (ns === CONVERSATION_NS && key === "hero.headline") return HERO_TITLE;
+				if (ns === CONVERSATION_NS && key === "hero.preview") return "";
 				return original(ns, key, params);
 			};
 		}
