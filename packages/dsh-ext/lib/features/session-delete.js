@@ -7,6 +7,7 @@
  * - Agent 进程持有会话文件锁时 rm 会失败，看起来像「删不掉」
  *
  * Deploy 权威链路：停 web → 清 DSH_HOME 会话目录/投影缓存/workspace 注册表 → 再拉起。
+ * 若删的是当前会话，可带 workspaceId + openNewSession，重启后在同项目下新建会话。
  */
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -28,14 +29,19 @@ async function readDeployBridgeConfig() {
 }
 
 /**
+ * @param {unknown} _ctx
  * @param {string} sessionId
+ * @param {{ workspaceId?: string, openNewSession?: boolean }} [options]
  * @returns {Promise<{ ok: true, restarted?: boolean, message?: string, removedPaths?: string[] } | { ok: false, code: string, message: string }>}
  */
-export async function deleteSessionHard(_ctx, sessionId) {
+export async function deleteSessionHard(_ctx, sessionId, options = {}) {
   const id = String(sessionId || "").trim();
   if (!id) {
     return { ok: false, code: "invalid-id", message: "sessionId is required" };
   }
+
+  const workspaceId = String(options.workspaceId || "").trim();
+  const openNewSession = Boolean(options.openNewSession);
 
   let bridge;
   try {
@@ -49,6 +55,10 @@ export async function deleteSessionHard(_ctx, sessionId) {
     };
   }
 
+  const payload = { sessionId: id };
+  if (workspaceId) payload.workspaceId = workspaceId;
+  if (openNewSession) payload.openNewSession = true;
+
   let response;
   try {
     response = await fetch(`${bridge.baseUrl}/v1/agent/sessions/delete`, {
@@ -57,7 +67,7 @@ export async function deleteSessionHard(_ctx, sessionId) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${bridge.token}`,
       },
-      body: JSON.stringify({ sessionId: id }),
+      body: JSON.stringify(payload),
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);

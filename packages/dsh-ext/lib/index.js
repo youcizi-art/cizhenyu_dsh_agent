@@ -41,14 +41,19 @@ export class CizhenyuExtService extends TypertRemoteService {
 
   /**
    * Permanently delete a Session: stop work, detach, remove durable files.
-   * Parameter name `sessionId` is required for Gateway SRC wire mapping.
+   * Parameter names are required for Gateway SRC wire mapping.
    * @param {string} sessionId
+   * @param {string} [workspaceId]
+   * @param {boolean} [openNewSession]
    */
-  async deleteSession(sessionId) {
+  async deleteSession(sessionId, workspaceId, openNewSession) {
     if (!FEATURES["session-delete"]?.enabled) {
       return { ok: false, code: "disabled", message: "session-delete feature is disabled" };
     }
-    return deleteSessionHard(this.ctx, sessionId);
+    return deleteSessionHard(this.ctx, sessionId, {
+      workspaceId: workspaceId ? String(workspaceId) : undefined,
+      openNewSession: Boolean(openNewSession),
+    });
   }
 }
 
