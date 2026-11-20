@@ -4,7 +4,6 @@ window.__ModuleLoader__.load({
 		var module = { exports: {} };
 		var exports = module.exports;
 		Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-		var jsx_runtime = require("react/jsx-runtime");
 
 		/** Stable Remote namespace — keep in sync with host `cizhenyuExt`. */
 		var EXT_NS = "cizhenyuExt";
@@ -71,8 +70,8 @@ window.__ModuleLoader__.load({
 
 		/**
 		 * Feature: session-delete
-		 * - context menu (touch + desktop)
-		 * - hover row action
+		 * Only via session "⋯" context menu (no hover shortcut — avoid misclicks).
+		 * Icon reuses workspace.delete → IconTrashOutlineRegular (same as workspace delete).
 		 */
 		function registerSessionDelete(ctx) {
 			ctx.effect(function () {
@@ -87,6 +86,8 @@ window.__ModuleLoader__.load({
 						return [{
 							id: "cizhenyu-delete",
 							label: labelDelete(ctx.locale),
+							icon: { key: "workspace.delete" },
+							danger: true,
 							separatorBefore: true,
 							afterContent: true,
 							run: function () {
@@ -96,36 +97,6 @@ window.__ModuleLoader__.load({
 					},
 				});
 			}, "cizhenyu-ext: session delete menu");
-
-			ctx.slots.inject("sidebar.workspaces.session.row.action", function () {
-				return ctx.slots.register(
-					{ name: "sidebar.workspaces.session.row.action", id: "cizhenyu-delete", order: 900 },
-					function DeleteSessionRowButton(props) {
-						var sessionId = props.sessionId;
-						var displayTitle = props.displayTitle;
-						return jsx_runtime.jsx("button", {
-							type: "button",
-							title: labelDelete(ctx.locale),
-							"aria-label": labelDelete(ctx.locale),
-							style: {
-								border: "none",
-								background: "transparent",
-								cursor: "pointer",
-								padding: "2px 4px",
-								lineHeight: 1,
-								opacity: 0.75,
-								color: "inherit",
-								fontSize: 12,
-							},
-							onClick: function (event) {
-								if (event && event.stopPropagation) event.stopPropagation();
-								void runDelete(ctx, sessionId, displayTitle);
-							},
-							children: isZhLocale(ctx.locale) ? "删" : "Del",
-						});
-					},
-				);
-			});
 		}
 
 		/**
@@ -135,7 +106,7 @@ window.__ModuleLoader__.load({
 			{ id: "session-delete", enabled: true, register: registerSessionDelete },
 		];
 
-		var inject = ["contextMenus", "slots", "locale", "connection"];
+		var inject = ["contextMenus", "locale", "connection"];
 
 		function apply(ctx) {
 			for (var i = 0; i < CLIENT_FEATURES.length; i++) {
