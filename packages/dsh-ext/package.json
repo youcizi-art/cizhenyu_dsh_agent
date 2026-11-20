@@ -1,0 +1,45 @@
+{
+  "name": "@cizhenyu/dsh-ext",
+  "version": "0.1.0",
+  "description": "Cizhenyu product extensions for DeepSeek Harness (UI + host capabilities; feature modules)",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/youcizi-art/cizhenyu_dsh_agent.git"
+  },
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/**/*.js",
+    "README.md",
+    "AGENTS.md"
+  ],
+  "dsh": {
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-workspace",
+        "@deepseek-ai/dsh-client-ui-context-menu",
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-api-gateway"
+      ],
+      "platform": "web"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.1.0",
+    "@deepseek-ai/dsh-typert-protocol": "0.2.2-rc.1",
+    "@deepseek-ai/dsh-workspace": "0.2.2-rc.1",
+    "@deepseek-ai/dsh-session-persistence": "0.2.2-rc.1"
+  },
+  "cizhenyu": {
+    "kind": "dsh-ext-plugin",
+    "productName": "CIZHENYU AGENT",
+    "peerDsh": "0.2.2-rc.1",
+    "cordisPluginId": "cizhenyu-ext"
+  }
+}

@@ -10,9 +10,10 @@ Deploy 按工具箱同一套路安装：GitHub ZIP → `{workRoot}/agents/dsh_ag
 
 ## 结构
 
-- `package.json`：钉 `@deepseek-ai/dsh` + 本地品牌包
+- `package.json`：钉 `@deepseek-ai/dsh` + 本地品牌包 + 扩展包
 - `packages/dsh-client-ui-brand`：侧栏 / 对话 hero 品牌槽位
-- `deploy/cordis.brand.patch.yml`：插入品牌插件、关闭官方品牌与账号登录 UI
+- `packages/dsh-ext`：产品扩展（会话删除等 feature；后续 UI/能力优先加这里）
+- `deploy/cordis.brand.patch.yml`：插入品牌/扩展插件、关闭官方品牌与账号登录 UI
 
 ## 改品牌
 
@@ -21,7 +22,9 @@ cd packages/dsh-client-ui-brand
 python _gen_client.py
 ```
 
-然后提交并 push；用户侧 Deploy 重装/更新 Agent。
+## 改扩展（如会话删除）
+
+编辑 `packages/dsh-ext`（见包内 `AGENTS.md`），提交并 push；用户侧 Deploy 重装/更新 Agent。
 
 ## 许可证
 

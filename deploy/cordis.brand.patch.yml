@@ -1,6 +1,8 @@
 - insert:
     - id: ui-brand-cizhenyu
       name: '@cizhenyu/dsh-client-ui-brand'
+    - id: cizhenyu-ext
+      name: '@cizhenyu/dsh-ext'
 
 - id: ui-brand-official
   disabled: true

@@ -24,6 +24,13 @@
       "path": "packages/dsh-client-ui-brand",
       "cordisPatch": "deploy/cordis.brand.patch.yml",
       "role": "web-client-brand"
+    },
+    {
+      "id": "cizhenyu-ext",
+      "npmName": "@cizhenyu/dsh-ext",
+      "path": "packages/dsh-ext",
+      "cordisPatch": "deploy/cordis.brand.patch.yml",
+      "role": "product-ext"
     }
   ]
 }

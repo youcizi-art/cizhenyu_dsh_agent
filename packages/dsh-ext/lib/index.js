@@ -1,0 +1,63 @@
+/**
+ * @cizhenyu/dsh-ext — Host half.
+ * Extensible product Service: add Remote methods + feature modules without new packages.
+ */
+import { TypertRemoteService } from "@deepseek-ai/dsh-typert-protocol";
+import { deleteSessionHard } from "./features/session-delete.js";
+
+/** Must match @deepseek-ai/dsh-typert-protocol internal descriptor key (SRC discovery). */
+const REMOTE_METHOD_DESCRIPTOR = "@deepseek-ai/dsh-typert-protocol/remote-methods";
+
+/**
+ * Declared Remote exports for Gateway SRC discovery.
+ * Add a method here when exposing a new host RPC under namespace `cizhenyuExt`.
+ */
+const REMOTE_METHODS = Object.freeze([
+  Object.freeze({
+    method: "deleteSession",
+    invocation: Object.freeze({ kind: "direct" }),
+  }),
+  // Future: Object.freeze({ method: '…', invocation: Object.freeze({ kind: 'direct' }) }),
+]);
+
+/**
+ * Feature registry (host). Client features are registered in lib/client.js.
+ * Keep ids stable; enable/disable can be wired to Config later.
+ */
+export const FEATURES = Object.freeze({
+  "session-delete": {
+    id: "session-delete",
+    enabled: true,
+    description: "Hard-delete sidebar sessions (menu action)",
+  },
+});
+
+export class CizhenyuExtService extends TypertRemoteService {
+  static inject = ["workspaceRegistry", "sessionPersistence"];
+
+  constructor(ctx) {
+    super(ctx, "cizhenyuExt");
+  }
+
+  /**
+   * Permanently delete a Session: stop work, detach, remove durable files.
+   * Parameter name `sessionId` is required for Gateway SRC wire mapping.
+   * @param {string} sessionId
+   */
+  async deleteSession(sessionId) {
+    if (!FEATURES["session-delete"]?.enabled) {
+      return { ok: false, code: "disabled", message: "session-delete feature is disabled" };
+    }
+    return deleteSessionHard(this.ctx, sessionId);
+  }
+}
+
+Object.defineProperty(CizhenyuExtService.prototype, REMOTE_METHOD_DESCRIPTOR, {
+  configurable: true,
+  value: Object.freeze({
+    version: 1,
+    methods: REMOTE_METHODS,
+  }),
+});
+
+export default CizhenyuExtService;
