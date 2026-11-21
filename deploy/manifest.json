@@ -14,7 +14,7 @@
   },
   "kernel": {
     "npmPackage": "@deepseek-ai/dsh",
-    "npmVersion": "0.2.2-rc.1",
+    "npmVersion": "0.2.2-rc.5",
     "note": "Official MIT kernel; productization via plugins only"
   },
   "plugins": [

@@ -9,7 +9,7 @@
     "url": "git+https://github.com/youcizi-art/cizhenyu_dsh_agent.git"
   },
   "dependencies": {
-    "@deepseek-ai/dsh": "0.2.2-rc.1",
+    "@deepseek-ai/dsh": "0.2.2-rc.5",
     "@cizhenyu/dsh-client-ui-brand": "file:./packages/dsh-client-ui-brand",
     "@cizhenyu/dsh-ext": "file:./packages/dsh-ext"
   },

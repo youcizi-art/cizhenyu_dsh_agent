@@ -32,15 +32,15 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "~4.1.0",
-    "@deepseek-ai/dsh-typert-protocol": "0.2.2-rc.1",
-    "@deepseek-ai/dsh-workspace": "0.2.2-rc.1",
-    "@deepseek-ai/dsh-session-persistence": "0.2.2-rc.1",
-    "@deepseek-ai/dsh-home-paths": "0.2.2-rc.1"
+    "@deepseek-ai/dsh-typert-protocol": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-workspace": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-session-persistence": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-home-paths": "0.2.2-rc.5"
   },
   "cizhenyu": {
     "kind": "dsh-ext-plugin",
     "productName": "CIZHENYU AGENT",
-    "peerDsh": "0.2.2-rc.1",
+    "peerDsh": "0.2.2-rc.5",
     "cordisPluginId": "cizhenyu-ext"
   }
 }

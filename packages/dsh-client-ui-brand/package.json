@@ -40,7 +40,7 @@
   "cizhenyu": {
     "kind": "dsh-client-plugin",
     "productName": "CIZHENYU AGENT",
-    "peerDsh": "0.2.2-rc.1",
+    "peerDsh": "0.2.2-rc.5",
     "cordisPluginId": "ui-brand-cizhenyu"
   }
 }
