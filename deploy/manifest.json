@@ -3,6 +3,11 @@
   "product": "CIZHENYU AGENT",
   "repo": "https://github.com/youcizi-art/cizhenyu_dsh_agent.git",
   "strategy": "B",
+  "release": {
+    "version": "0.1.1",
+    "channel": "stable",
+    "notes": "升级内核至 0.2.2-rc.5；预装社区插件市场 dshmarket"
+  },
   "install": {
     "target": "{workRoot}/agents/dsh_agent",
     "fetch": "github-zip",

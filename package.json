@@ -1,7 +1,7 @@
 {
   "name": "cizhenyu-dsh-agent",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CIZHENYU AGENT install root: official @deepseek-ai/dsh + brand + product ext plugins",
   "license": "MIT",
   "repository": {
