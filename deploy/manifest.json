@@ -17,6 +17,15 @@
     "npmVersion": "0.2.2-rc.5",
     "note": "Official MIT kernel; productization via plugins only"
   },
+  "market": {
+    "npmPackage": "dshmarket",
+    "npmVersion": "1.77.1",
+    "profile": "web",
+    "install": "dsh plugin --profile web add",
+    "catalog": "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin",
+    "repo": "https://github.com/dsh-market/dsh-market",
+    "note": "Plan A: community storefront preinstalled into DSH_HOME web profile on Agent install"
+  },
   "plugins": [
     {
       "id": "ui-brand-cizhenyu",
