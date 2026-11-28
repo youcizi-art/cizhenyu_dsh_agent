@@ -8,3 +8,4 @@
 6. 禁止在 Deploy WebView 做 DOM 品牌刮擦。
 7. 禁止 `disabled: deepseek-account`（会卡死 account-controller）；关闭登录 UI 用 `ui-settings-account: disabled: true`。
 8. 用户数据只在安装副本 `home/`。
+9. 聊天里出现裸 DSML / 工具调用原文、带图任务无法改 logo：通常是 Free Token 网关 Anthropic↔OpenAI 工具往返丢失（修 `scripts/free-token`，不是改 DSH 内核）。接线后确认 `wire.dshWired=true`。
